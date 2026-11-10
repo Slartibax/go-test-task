@@ -1,0 +1,143 @@
+meta {
+  name: Invalid path uuid
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets/not-a-uuid
+  body: none
+  auth: none
+}
+
+docs {
+  В пути нужен UUID. Нулевой UUID даёт тот же ответ.
+
+  Сохранённые примеры ответов:
+
+  422 Unprocessable Entity. Строка not-a-uuid и нулевой UUID отклоняются до базы.
+
+  ```json
+  {
+    "error": "invalid wallet id"
+  }
+  ```
+
+  422 Unprocessable Entity. Нулевой UUID в пути.
+
+  ```json
+  {
+    "error": "invalid wallet id"
+  }
+  ```
+
+  500 Internal Server Error. Обработчик паникует. До базы запрос не считается выполненным.
+
+  ```json
+  {
+    "error": "internal error"
+  }
+  ```
+}
+
+example {
+  name: 422 Unprocessable Entity
+  description: Строка not-a-uuid и нулевой UUID отклоняются до базы.
+
+  request: {
+    url: {{baseUrl}}/api/v1/wallets/not-a-uuid
+    method: get
+    mode: none
+  }
+
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+
+    status: {
+      code: 422
+      text: Unprocessable Entity
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "invalid wallet id"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 422 nil uuid
+  description: Нулевой UUID в пути.
+
+  request: {
+    url: {{baseUrl}}/api/v1/wallets/00000000-0000-0000-0000-000000000000
+    method: get
+    mode: none
+  }
+
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+
+    status: {
+      code: 422
+      text: Unprocessable Entity
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "invalid wallet id"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 500 Internal Server Error
+  description: Обработчик паникует. До базы запрос не считается выполненным.
+
+  request: {
+    url: {{baseUrl}}/api/v1/wallets/not-a-uuid
+    method: get
+    mode: none
+  }
+
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+
+    status: {
+      code: 500
+      text: Internal Server Error
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "internal error"
+        }
+      '''
+    }
+  }
+}
+
+assert {
+  res.status: eq 422
+  res.body.error: eq invalid wallet id
+}
+
+settings {
+  encodeUrl: true
+}

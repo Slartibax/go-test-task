@@ -1,0 +1,202 @@
+openapi: 3.0.0
+info:
+  title: go-test-task
+  version: 1.0.0
+paths:
+  /health:
+    get:
+      summary: Health
+      operationId: Health
+      description: ''
+      tags:
+        - ''
+      responses:
+        '200':
+          description: ''
+  /api/v1/wallet:
+    post:
+      summary: Deposit or withdraw
+      operationId: Deposit
+      description: |
+        Одна операция изменения баланса.
+
+        DEPOSIT увеличивает баланс. Если кошелька ещё нет, он создаётся.
+
+        WITHDRAW списывает сумму с уже существующего кошелька.
+        Кошелька нет — 404. Баланса не хватает — 409.
+      tags:
+        - wallet
+      parameters:
+        - name: Content-Type
+          in: header
+          description: application/json. Пустой заголовок тоже принимается.
+          required: true
+          example: application/json
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/deposit'
+                - $ref: '#/components/schemas/withdraw'
+            examples:
+              deposit:
+                summary: Deposit
+                value:
+                  walletId: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                  operationType: DEPOSIT
+                  amount: 1000
+              withdraw:
+                summary: Withdraw
+                description: |
+                  Списание с существующего кошелька.
+                  404, если кошелька нет. 409, если баланса не хватает.
+                value:
+                  walletId: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                  operationType: WITHDRAW
+                  amount: 200
+      responses:
+        '200':
+          description: Баланс после депозита или списания.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/wallet'
+              examples:
+                deposit:
+                  summary: Deposit
+                  value:
+                    walletId: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                    operationType: DEPOSIT
+                    balance: 1000
+                withdraw:
+                  summary: Withdraw
+                  value:
+                    walletId: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                    operationType: WITHDRAW
+                    balance: 800
+        '404':
+          description: Кошелёк не найден. Так отвечает WITHDRAW, если кошелька ещё нет. DEPOSIT в этом случае создаёт кошелёк.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+              example:
+                error: wallet not found
+        '409':
+          description: Недостаточно средств для WITHDRAW.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+              example:
+                error: insufficient funds
+        '422':
+          description: Некорректный walletId, operationType или amount.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+              example:
+                error: invalid amount
+  /api/v1/wallets/{walletId}:
+    get:
+      summary: Get balance
+      operationId: Get balance
+      description: ''
+      tags:
+        - wallet
+      responses:
+        '200':
+          description: ''
+      parameters:
+        - name: walletId
+          in: path
+          required: true
+          example: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+servers:
+  - url: http://127.0.0.1:8000
+    description: local
+components:
+  schemas:
+    deposit:
+      type: object
+      properties:
+        walletId:
+          type: string
+        operationType:
+          type: string
+        amount:
+          type: number
+      example:
+        walletId: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+        operationType: DEPOSIT
+        amount: 1000
+    withdraw:
+      type: object
+      description: |
+        Списание. Кошелёк уже должен существовать, сумма списывается целиком.
+        Если строки нет, ответ 404. Если баланса не хватает, ответ 409.
+      required:
+        - walletId
+        - operationType
+        - amount
+      properties:
+        walletId:
+          type: string
+          format: uuid
+          description: Идентификатор существующего кошелька. Нулевой UUID отклоняется.
+        operationType:
+          type: string
+          enum:
+            - WITHDRAW
+          description: Тип операции. Для списания только WITHDRAW.
+        amount:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Положительная целая сумма списания.
+      example:
+        walletId: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+        operationType: WITHDRAW
+        amount: 200
+    wallet:
+      type: object
+      properties:
+        walletId:
+          type: string
+          format: uuid
+        operationType:
+          type: string
+          enum:
+            - DEPOSIT
+            - WITHDRAW
+        balance:
+          type: integer
+          format: int64
+    error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+  requestBodies:
+    deposit:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/deposit'
+      description: ''
+      required: true
+    withdraw:
+      description: |
+        Списание с существующего кошелька.
+        404, если кошелька нет. 409, если баланса не хватает.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/withdraw'
+      required: true
+  securitySchemes: {}

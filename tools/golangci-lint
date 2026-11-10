@@ -1,0 +1,4 @@
+#!/bin/sh
+# Запускает golangci-lint версии из tools/go.mod, не меняя рабочий каталог.
+root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd) || exit 1
+exec go tool -modfile="$root/tools/go.mod" golangci-lint "$@"

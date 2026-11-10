@@ -1,0 +1,136 @@
+meta {
+  name: Unknown wallet key
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallet
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "valletId": "{{walletId}}",
+    "operationType": "DEPOSIT",
+    "amount": 1
+  }
+}
+
+docs {
+  Принимается только точный ключ walletId. valletId, walletid и wallet_id не заполняют идентификатор.
+
+  Сохранённые примеры ответов:
+
+  422 Unprocessable Entity. Чужой ключ игнорируется, поэтому идентификатор пустой.
+
+  ```json
+  {
+    "error": "invalid wallet id"
+  }
+  ```
+
+  500 Internal Server Error. Обработчик паникует. До базы запрос не считается выполненным.
+
+  ```json
+  {
+    "error": "internal error"
+  }
+  ```
+}
+
+example {
+  name: 422 Unprocessable Entity
+  description: Чужой ключ игнорируется, поэтому идентификатор пустой.
+
+  request: {
+    url: {{baseUrl}}/api/v1/wallet
+    method: post
+    mode: json
+    headers: {
+      Content-Type: application/json
+    }
+    body:json: {
+      {
+        "valletId": "{{walletId}}",
+        "operationType": "DEPOSIT",
+        "amount": 1
+      }
+    }
+  }
+
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+
+    status: {
+      code: 422
+      text: Unprocessable Entity
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "invalid wallet id"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 500 Internal Server Error
+  description: Обработчик паникует. До базы запрос не считается выполненным.
+
+  request: {
+    url: {{baseUrl}}/api/v1/wallet
+    method: post
+    mode: json
+    headers: {
+      Content-Type: application/json
+    }
+    body:json: {
+      {
+        "valletId": "{{walletId}}",
+        "operationType": "DEPOSIT",
+        "amount": 1
+      }
+    }
+  }
+
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+
+    status: {
+      code: 500
+      text: Internal Server Error
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "internal error"
+        }
+      '''
+    }
+  }
+}
+
+assert {
+  res.status: eq 422
+  res.body.error: eq invalid wallet id
+}
+
+settings {
+  encodeUrl: true
+}

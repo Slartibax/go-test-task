@@ -1,0 +1,15 @@
+.env
+.env.backup
+.env.production
+
+.idea
+.vscode/*
+!.vscode/settings.json
+.cursor
+.DS_Store
+
+/bin/
+/dist/
+*.exe
+*.test
+coverage.out

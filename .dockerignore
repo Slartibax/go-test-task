@@ -1,0 +1,13 @@
+.git
+.idea
+.cursor
+tools
+.agents
+.DS_Store
+
+.env
+.env.*
+!.env.example
+
+docker-compose*.yaml
+README.md

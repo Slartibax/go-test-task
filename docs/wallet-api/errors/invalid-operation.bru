@@ -1,0 +1,136 @@
+meta {
+  name: Invalid operation
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallet
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "walletId": "{{walletId}}",
+    "operationType": "TRANSFER",
+    "amount": 1
+  }
+}
+
+docs {
+  Тип операции только DEPOSIT или WITHDRAW.
+
+  Сохранённые примеры ответов:
+
+  422 Unprocessable Entity. Другой регистр и любой прочий тип отклоняются одинаково.
+
+  ```json
+  {
+    "error": "invalid operation type"
+  }
+  ```
+
+  500 Internal Server Error. Обработчик паникует. До базы запрос не считается выполненным.
+
+  ```json
+  {
+    "error": "internal error"
+  }
+  ```
+}
+
+example {
+  name: 422 Unprocessable Entity
+  description: Другой регистр и любой прочий тип отклоняются одинаково.
+
+  request: {
+    url: {{baseUrl}}/api/v1/wallet
+    method: post
+    mode: json
+    headers: {
+      Content-Type: application/json
+    }
+    body:json: {
+      {
+        "walletId": "{{walletId}}",
+        "operationType": "TRANSFER",
+        "amount": 1
+      }
+    }
+  }
+
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+
+    status: {
+      code: 422
+      text: Unprocessable Entity
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "invalid operation type"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 500 Internal Server Error
+  description: Обработчик паникует. До базы запрос не считается выполненным.
+
+  request: {
+    url: {{baseUrl}}/api/v1/wallet
+    method: post
+    mode: json
+    headers: {
+      Content-Type: application/json
+    }
+    body:json: {
+      {
+        "walletId": "{{walletId}}",
+        "operationType": "TRANSFER",
+        "amount": 1
+      }
+    }
+  }
+
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+
+    status: {
+      code: 500
+      text: Internal Server Error
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "internal error"
+        }
+      '''
+    }
+  }
+}
+
+assert {
+  res.status: eq 422
+  res.body.error: eq invalid operation type
+}
+
+settings {
+  encodeUrl: true
+}

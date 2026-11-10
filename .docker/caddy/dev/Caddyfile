@@ -1,0 +1,9 @@
+:80 {
+	reverse_proxy app:8080 {
+		header_up Host {host}
+		header_up X-Forwarded-Proto {http.request.header.x-forwarded-proto}
+		header_up X-Forwarded-Host {http.request.header.x-forwarded-host}
+		header_up X-Forwarded-Port {http.request.header.x-forwarded-port}
+		header_up X-Forwarded-For {http.request.header.x-forwarded-for},{remote_host}
+	}
+}

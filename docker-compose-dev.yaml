@@ -1,0 +1,75 @@
+# DEV - Для дев окружения на сервере
+name: go-test-task
+
+networks:
+  main:
+    driver: bridge
+
+volumes:
+  pgsql:
+    driver: local
+
+x-common: &common
+  restart: always
+  networks:
+    - main
+
+services:
+
+# GATEWAYS
+
+  caddy:
+    image: caddy:2.11
+    <<: *common
+    ports:
+      - "127.0.0.1:${DEPLOYMENT_PROXY_PORT:-8000}:80"
+    volumes:
+      - ./.docker/caddy/dev/Caddyfile:/etc/caddy/Caddyfile
+
+
+  # APPLICATIONS
+
+  app:
+    <<: *common
+    image: go-test-task-dev
+    init: true
+    env_file: .env
+    build:
+      dockerfile: .docker/app/Dockerfile
+      target: runtime
+    volumes:
+      - "./.env:/app/.env:ro"
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+# STORES
+
+  database:
+    image: postgres:17.5
+    <<: *common
+    volumes:
+      - "pgsql:/var/lib/postgresql/data"
+    environment:
+      POSTGRES_USER: "${DB_USERNAME}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+      POSTGRES_DB: "${DB_DATABASE}"
+    deploy:
+      resources:
+        limits:
+          cpus: "2.00"
+          memory: 2048M
+        reservations:
+          cpus: "0.50"
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5

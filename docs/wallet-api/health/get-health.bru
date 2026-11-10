@@ -1,0 +1,105 @@
+meta {
+  name: Get health
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/health
+  body: none
+  auth: none
+}
+
+vars:pre-request {
+  baseUrl: http://localhost:8000
+}
+
+assert {
+  res.status: eq 200
+  res.body: contains ok
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  Проверка процесса. Базу не трогает.
+  
+  Сохранённые примеры ответов:
+  
+  200 OK. Процесс жив. После ok стоит перевод строки. База не опрашивается.
+  
+  ```
+  ok
+  ```
+  
+  500 Internal Server Error. Обработчик паникует. До базы запрос не считается выполненным.
+  
+  ```json
+  {
+    "error": "internal error"
+  }
+  ```
+}
+
+example {
+  name: 200 OK
+  description: Процесс жив. После ok стоит перевод строки. База не опрашивается.
+  
+  request: {
+    url: {{baseUrl}}/health
+    method: get
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      Content-Type: text/plain; charset=utf-8
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: text
+      content: '''
+        ok
+      '''
+    }
+  }
+}
+
+example {
+  name: 500 Internal Server Error
+  description: Обработчик паникует. До базы запрос не считается выполненным.
+  
+  request: {
+    url: {{baseUrl}}/health
+    method: get
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+  
+    status: {
+      code: 500
+      text: Internal Server Error
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "internal error"
+        }
+      '''
+    }
+  }
+}

@@ -1,0 +1,586 @@
+meta {
+  name: Withdraw
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallet
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "walletId": "{{walletId}}",
+    "operationType": "WITHDRAW",
+    "amount": 400
+  }
+}
+
+vars:pre-request {
+  walletId: 13586b6c-7336-4361-bd96-ce053848604e
+}
+
+assert {
+  res.status: eq 200
+  res.body.operationType: eq WITHDRAW
+  res.body.walletId: eq {{walletId}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  Списание проходит, только если кошелёк уже есть и баланс покрывает сумму.
+  
+  Сохранённые примеры ответов:
+  
+  200 OK. Баланс до запроса 1000, списание 400 оставляет 600.
+  
+  ```json
+  {
+    "walletId": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+    "operationType": "WITHDRAW",
+    "balance": 600
+  }
+  ```
+  
+  404 Not Found. Кошелька ещё нет.
+  
+  ```json
+  {
+    "error": "wallet not found"
+  }
+  ```
+  
+  409 Conflict. Кошелёк есть, но суммы не хватает. Баланс не меняется.
+  
+  ```json
+  {
+    "error": "insufficient funds"
+  }
+  ```
+  
+  422 Unprocessable Entity. Тело не разбирается как JSON, в том числе дробный amount.
+  
+  ```json
+  {
+    "error": "invalid json"
+  }
+  ```
+  
+  422 Unprocessable Entity. Сумма ноль, отрицательная или не помещается в BIGINT.
+  
+  ```json
+  {
+    "error": "invalid amount"
+  }
+  ```
+  
+  422 Unprocessable Entity. Тип операции не DEPOSIT и не WITHDRAW.
+  
+  ```json
+  {
+    "error": "invalid operation type"
+  }
+  ```
+  
+  422 Unprocessable Entity. Нет walletId, ключ записан иначе или UUID нулевой.
+  
+  ```json
+  {
+    "error": "invalid wallet id"
+  }
+  ```
+  
+  422 Unprocessable Entity. Тело больше 4096 байт.
+  
+  ```json
+  {
+    "error": "request body is too large"
+  }
+  ```
+  
+  415 Unsupported Media Type. Content-Type задан и это не application/json. Пустой заголовок принимается.
+  
+  ```json
+  {
+    "error": "content type must be application/json"
+  }
+  ```
+  
+  503 Service Unavailable. Postgres недоступен или запрос к нему завершился ошибкой.
+  
+  ```json
+  {
+    "error": "service unavailable"
+  }
+  ```
+  
+  500 Internal Server Error. Обработчик паникует. До базы запрос не считается выполненным.
+  
+  ```json
+  {
+    "error": "internal error"
+  }
+  ```
+}
+
+example {
+  name: 200 OK
+  description: Баланс до запроса 1000, списание 400 оставляет 600.
+  
+  request: {
+    url: {{baseUrl}}/api/v1/wallet
+    method: post
+    mode: json
+    headers: {
+      Content-Type: application/json
+    }
+  
+    body:json: {
+      {
+        "walletId": "{{walletId}}",
+        "operationType": "WITHDRAW",
+        "amount": 400
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "walletId": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+          "operationType": "WITHDRAW",
+          "balance": 600
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 404 Not Found
+  description: Кошелька ещё нет.
+  
+  request: {
+    url: {{baseUrl}}/api/v1/wallet
+    method: post
+    mode: json
+    headers: {
+      Content-Type: application/json
+    }
+  
+    body:json: {
+      {
+        "walletId": "{{walletId}}",
+        "operationType": "WITHDRAW",
+        "amount": 400
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+  
+    status: {
+      code: 404
+      text: Not Found
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "wallet not found"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 409 Conflict
+  description: Кошелёк есть, но суммы не хватает. Баланс не меняется.
+  
+  request: {
+    url: {{baseUrl}}/api/v1/wallet
+    method: post
+    mode: json
+    headers: {
+      Content-Type: application/json
+    }
+  
+    body:json: {
+      {
+        "walletId": "{{walletId}}",
+        "operationType": "WITHDRAW",
+        "amount": 400
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+  
+    status: {
+      code: 409
+      text: Conflict
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "insufficient funds"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 422 invalid json
+  description: Тело не разбирается как JSON, в том числе дробный amount.
+  
+  request: {
+    url: {{baseUrl}}/api/v1/wallet
+    method: post
+    mode: json
+    headers: {
+      Content-Type: application/json
+    }
+  
+    body:json: {
+      {"walletId":}
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+  
+    status: {
+      code: 422
+      text: Unprocessable Entity
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "invalid json"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 422 invalid amount
+  description: Сумма ноль, отрицательная или не помещается в BIGINT.
+  
+  request: {
+    url: {{baseUrl}}/api/v1/wallet
+    method: post
+    mode: json
+    headers: {
+      Content-Type: application/json
+    }
+  
+    body:json: {
+      {
+        "walletId": "{{walletId}}",
+        "operationType": "DEPOSIT",
+        "amount": 0
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+  
+    status: {
+      code: 422
+      text: Unprocessable Entity
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "invalid amount"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 422 invalid operation
+  description: Тип операции не DEPOSIT и не WITHDRAW.
+  
+  request: {
+    url: {{baseUrl}}/api/v1/wallet
+    method: post
+    mode: json
+    headers: {
+      Content-Type: application/json
+    }
+  
+    body:json: {
+      {
+        "walletId": "{{walletId}}",
+        "operationType": "TRANSFER",
+        "amount": 1
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+  
+    status: {
+      code: 422
+      text: Unprocessable Entity
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "invalid operation type"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 422 invalid wallet id
+  description: Нет walletId, ключ записан иначе или UUID нулевой.
+  
+  request: {
+    url: {{baseUrl}}/api/v1/wallet
+    method: post
+    mode: json
+    headers: {
+      Content-Type: application/json
+    }
+  
+    body:json: {
+      {
+        "walletId": "00000000-0000-0000-0000-000000000000",
+        "operationType": "DEPOSIT",
+        "amount": 1
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+  
+    status: {
+      code: 422
+      text: Unprocessable Entity
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "invalid wallet id"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 422 body too large
+  description: Тело больше 4096 байт.
+  
+  request: {
+    url: {{baseUrl}}/api/v1/wallet
+    method: post
+    mode: json
+    headers: {
+      Content-Type: application/json
+    }
+  
+    body:json: {
+      {"operationType":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","walletId":"11111111-1111-1111-1111-111111111111","amount":1}
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+  
+    status: {
+      code: 422
+      text: Unprocessable Entity
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "request body is too large"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 415 Unsupported Media Type
+  description: Content-Type задан и это не application/json. Пустой заголовок принимается.
+  
+  request: {
+    url: {{baseUrl}}/api/v1/wallet
+    method: post
+    mode: text
+    headers: {
+      Content-Type: text/plain
+    }
+  
+    body:text: {
+      {"walletId":"{{walletId}}","operationType":"DEPOSIT","amount":1}
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+  
+    status: {
+      code: 415
+      text: Unsupported Media Type
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "content type must be application/json"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 503 Service Unavailable
+  description: Postgres недоступен или запрос к нему завершился ошибкой.
+  
+  request: {
+    url: {{baseUrl}}/api/v1/wallet
+    method: post
+    mode: json
+    headers: {
+      Content-Type: application/json
+    }
+  
+    body:json: {
+      {
+        "walletId": "{{walletId}}",
+        "operationType": "WITHDRAW",
+        "amount": 400
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+  
+    status: {
+      code: 503
+      text: Service Unavailable
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "service unavailable"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 500 Internal Server Error
+  description: Обработчик паникует. До базы запрос не считается выполненным.
+  
+  request: {
+    url: {{baseUrl}}/api/v1/wallet
+    method: post
+    mode: json
+    headers: {
+      Content-Type: application/json
+    }
+  
+    body:json: {
+      {
+        "walletId": "{{walletId}}",
+        "operationType": "WITHDRAW",
+        "amount": 400
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+  
+    status: {
+      code: 500
+      text: Internal Server Error
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "internal error"
+        }
+      '''
+    }
+  }
+}

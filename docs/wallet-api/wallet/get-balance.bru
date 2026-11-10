@@ -1,0 +1,228 @@
+meta {
+  name: Get balance
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets/{{walletId}}
+  body: none
+  auth: none
+}
+
+vars:pre-request {
+  walletId: 13586b6c-7336-4361-bd96-ce053848604e
+}
+
+assert {
+  res.status: eq 200
+  res.body.walletId: eq {{walletId}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  Текущий баланс. Строка кошелька не блокируется, `operationType` в ответе нет.
+  
+  Сохранённые примеры ответов:
+  
+  200 OK. Баланс после одного депозита 1000 и одного списания 400.
+  
+  ```json
+  {
+    "walletId": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+    "balance": 600
+  }
+  ```
+  
+  422 Unprocessable Entity. В пути не UUID или нулевой UUID.
+  
+  ```json
+  {
+    "error": "invalid wallet id"
+  }
+  ```
+  
+  404 Not Found. Кошелька с этим UUID нет.
+  
+  ```json
+  {
+    "error": "wallet not found"
+  }
+  ```
+  
+  503 Service Unavailable. Postgres недоступен или запрос к нему завершился ошибкой.
+  
+  ```json
+  {
+    "error": "service unavailable"
+  }
+  ```
+  
+  500 Internal Server Error. Обработчик паникует. До базы запрос не считается выполненным.
+  
+  ```json
+  {
+    "error": "internal error"
+  }
+  ```
+}
+
+example {
+  name: 200 OK
+  description: Баланс после одного депозита 1000 и одного списания 400.
+  
+  request: {
+    url: {{baseUrl}}/api/v1/wallets/{{walletId}}
+    method: get
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "walletId": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+          "balance": 600
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 422 Unprocessable Entity
+  description: В пути не UUID или нулевой UUID.
+  
+  request: {
+    url: {{baseUrl}}/api/v1/wallets/not-a-uuid
+    method: get
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+  
+    status: {
+      code: 422
+      text: Unprocessable Entity
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "invalid wallet id"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 404 Not Found
+  description: Кошелька с этим UUID нет.
+  
+  request: {
+    url: {{baseUrl}}/api/v1/wallets/{{missingWalletId}}
+    method: get
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+  
+    status: {
+      code: 404
+      text: Not Found
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "wallet not found"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 503 Service Unavailable
+  description: Postgres недоступен или запрос к нему завершился ошибкой.
+  
+  request: {
+    url: {{baseUrl}}/api/v1/wallets/{{walletId}}
+    method: get
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+  
+    status: {
+      code: 503
+      text: Service Unavailable
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "service unavailable"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 500 Internal Server Error
+  description: Обработчик паникует. До базы запрос не считается выполненным.
+  
+  request: {
+    url: {{baseUrl}}/api/v1/wallets/{{walletId}}
+    method: get
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+  
+    status: {
+      code: 500
+      text: Internal Server Error
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "internal error"
+        }
+      '''
+    }
+  }
+}

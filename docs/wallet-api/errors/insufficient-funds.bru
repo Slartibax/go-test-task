@@ -1,0 +1,287 @@
+meta {
+  name: Insufficient funds
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallet
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "walletId": "{{walletId}}",
+    "operationType": "WITHDRAW",
+    "amount": 1000000000
+  }
+}
+
+docs {
+  Сумма больше любого баланса из успешных запросов. Если кошелька нет, это 404, а не 409.
+
+  Сохранённые примеры ответов:
+
+  409 Conflict. Кошелёк есть, суммы не хватает, баланс не меняется.
+
+  ```json
+  {
+    "error": "insufficient funds"
+  }
+  ```
+
+  404 Not Found. Этого кошелька ещё нет.
+
+  ```json
+  {
+    "error": "wallet not found"
+  }
+  ```
+
+  200 OK. Так отвечает списание, если на кошельке было ровно 1000000000.
+
+  ```json
+  {
+    "walletId": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+    "operationType": "WITHDRAW",
+    "balance": 0
+  }
+  ```
+
+  503 Service Unavailable. Postgres недоступен или запрос к нему завершился ошибкой.
+
+  ```json
+  {
+    "error": "service unavailable"
+  }
+  ```
+
+  500 Internal Server Error. Обработчик паникует. До базы запрос не считается выполненным.
+
+  ```json
+  {
+    "error": "internal error"
+  }
+  ```
+}
+
+example {
+  name: 409 Conflict
+  description: Кошелёк есть, суммы не хватает, баланс не меняется.
+
+  request: {
+    url: {{baseUrl}}/api/v1/wallet
+    method: post
+    mode: json
+    headers: {
+      Content-Type: application/json
+    }
+    body:json: {
+      {
+        "walletId": "{{walletId}}",
+        "operationType": "WITHDRAW",
+        "amount": 1000000000
+      }
+    }
+  }
+
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+
+    status: {
+      code: 409
+      text: Conflict
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "insufficient funds"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 404 Not Found
+  description: Этого кошелька ещё нет.
+
+  request: {
+    url: {{baseUrl}}/api/v1/wallet
+    method: post
+    mode: json
+    headers: {
+      Content-Type: application/json
+    }
+    body:json: {
+      {
+        "walletId": "{{walletId}}",
+        "operationType": "WITHDRAW",
+        "amount": 1000000000
+      }
+    }
+  }
+
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+
+    status: {
+      code: 404
+      text: Not Found
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "wallet not found"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 200 OK
+  description: Так отвечает списание, если на кошельке было ровно 1000000000.
+
+  request: {
+    url: {{baseUrl}}/api/v1/wallet
+    method: post
+    mode: json
+    headers: {
+      Content-Type: application/json
+    }
+    body:json: {
+      {
+        "walletId": "{{walletId}}",
+        "operationType": "WITHDRAW",
+        "amount": 1000000000
+      }
+    }
+  }
+
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+
+    status: {
+      code: 200
+      text: OK
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "walletId": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+          "operationType": "WITHDRAW",
+          "balance": 0
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 503 Service Unavailable
+  description: Postgres недоступен или запрос к нему завершился ошибкой.
+
+  request: {
+    url: {{baseUrl}}/api/v1/wallet
+    method: post
+    mode: json
+    headers: {
+      Content-Type: application/json
+    }
+    body:json: {
+      {
+        "walletId": "{{walletId}}",
+        "operationType": "WITHDRAW",
+        "amount": 1000000000
+      }
+    }
+  }
+
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+
+    status: {
+      code: 503
+      text: Service Unavailable
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "service unavailable"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 500 Internal Server Error
+  description: Обработчик паникует. До базы запрос не считается выполненным.
+
+  request: {
+    url: {{baseUrl}}/api/v1/wallet
+    method: post
+    mode: json
+    headers: {
+      Content-Type: application/json
+    }
+    body:json: {
+      {
+        "walletId": "{{walletId}}",
+        "operationType": "WITHDRAW",
+        "amount": 1000000000
+      }
+    }
+  }
+
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+
+    status: {
+      code: 500
+      text: Internal Server Error
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "internal error"
+        }
+      '''
+    }
+  }
+}
+
+assert {
+  res.status: eq 409
+  res.body.error: eq insufficient funds
+}
+
+settings {
+  encodeUrl: true
+}

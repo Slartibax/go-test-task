@@ -1,0 +1,136 @@
+meta {
+  name: Negative amount
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallet
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "walletId": "{{walletId}}",
+    "operationType": "WITHDRAW",
+    "amount": -5
+  }
+}
+
+docs {
+  Отрицательная сумма не становится пополнением.
+
+  Сохранённые примеры ответов:
+
+  422 Unprocessable Entity. Проверка суммы срабатывает до обращения к базе.
+
+  ```json
+  {
+    "error": "invalid amount"
+  }
+  ```
+
+  500 Internal Server Error. Обработчик паникует. До базы запрос не считается выполненным.
+
+  ```json
+  {
+    "error": "internal error"
+  }
+  ```
+}
+
+example {
+  name: 422 Unprocessable Entity
+  description: Проверка суммы срабатывает до обращения к базе.
+
+  request: {
+    url: {{baseUrl}}/api/v1/wallet
+    method: post
+    mode: json
+    headers: {
+      Content-Type: application/json
+    }
+    body:json: {
+      {
+        "walletId": "{{walletId}}",
+        "operationType": "WITHDRAW",
+        "amount": -5
+      }
+    }
+  }
+
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+
+    status: {
+      code: 422
+      text: Unprocessable Entity
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "invalid amount"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 500 Internal Server Error
+  description: Обработчик паникует. До базы запрос не считается выполненным.
+
+  request: {
+    url: {{baseUrl}}/api/v1/wallet
+    method: post
+    mode: json
+    headers: {
+      Content-Type: application/json
+    }
+    body:json: {
+      {
+        "walletId": "{{walletId}}",
+        "operationType": "WITHDRAW",
+        "amount": -5
+      }
+    }
+  }
+
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+
+    status: {
+      code: 500
+      text: Internal Server Error
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "internal error"
+        }
+      '''
+    }
+  }
+}
+
+assert {
+  res.status: eq 422
+  res.body.error: eq invalid amount
+}
+
+settings {
+  encodeUrl: true
+}

@@ -1,0 +1,143 @@
+meta {
+  name: Get unknown wallet
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets/{{missingWalletId}}
+  body: none
+  auth: none
+}
+
+docs {
+  Чтение баланса кошелька, которого нет.
+
+  Сохранённые примеры ответов:
+
+  404 Not Found. UUID из missingWalletId нигде в коллекции не создаётся.
+
+  ```json
+  {
+    "error": "wallet not found"
+  }
+  ```
+
+  503 Service Unavailable. Postgres недоступен или запрос к нему завершился ошибкой.
+
+  ```json
+  {
+    "error": "service unavailable"
+  }
+  ```
+
+  500 Internal Server Error. Обработчик паникует. До базы запрос не считается выполненным.
+
+  ```json
+  {
+    "error": "internal error"
+  }
+  ```
+}
+
+example {
+  name: 404 Not Found
+  description: UUID из missingWalletId нигде в коллекции не создаётся.
+
+  request: {
+    url: {{baseUrl}}/api/v1/wallets/{{missingWalletId}}
+    method: get
+    mode: none
+  }
+
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+
+    status: {
+      code: 404
+      text: Not Found
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "wallet not found"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 503 Service Unavailable
+  description: Postgres недоступен или запрос к нему завершился ошибкой.
+
+  request: {
+    url: {{baseUrl}}/api/v1/wallets/{{missingWalletId}}
+    method: get
+    mode: none
+  }
+
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+
+    status: {
+      code: 503
+      text: Service Unavailable
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "service unavailable"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 500 Internal Server Error
+  description: Обработчик паникует. До базы запрос не считается выполненным.
+
+  request: {
+    url: {{baseUrl}}/api/v1/wallets/{{missingWalletId}}
+    method: get
+    mode: none
+  }
+
+  response: {
+    headers: {
+      Content-Type: application/json; charset=utf-8
+    }
+
+    status: {
+      code: 500
+      text: Internal Server Error
+    }
+
+    body: {
+      type: json
+      content: '''
+        {
+          "error": "internal error"
+        }
+      '''
+    }
+  }
+}
+
+assert {
+  res.status: eq 404
+  res.body.error: eq wallet not found
+}
+
+settings {
+  encodeUrl: true
+}
